@@ -1,6 +1,6 @@
 % Create elliptic blade geometry file for aspect ratio AR with N elements.
 
-function create_elliptic_blade(filename,N,AR)
+function create_elliptic_wing(filename,N,AR)
 
     y = linspace(-0.5,0.5,N);
     
