@@ -28,7 +28,7 @@
 % V holds the spanwise downwash distribution (normalized by freestream 
 % velocity) in columns corresponding to each angle of attack in ALFAS, as 
 % with GAMMA. 
-% 
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -272,3 +272,4 @@ function out = checkmonotonic(x)
     end
     
 end
+%%%%%%%%%%%%%%%%
