@@ -17,23 +17,3 @@ plot(data(:,1),data(:,2),'c.-');
 grid on;
 
 
-
-% figure();
-% [~,b] = size(Gamma);
-% for ii = 1:b
-%     plot(y,Gamma,'k-.');
-%     drawnow;
-%     pause(1);
-% end
-% 
-% 
-% figure();
-% [~,b] = size(v);
-% for ii = 1:b
-%     plot(y,v,'k-.');
-%     drawnow;
-%     pause(1);
-% end
-
-
-
