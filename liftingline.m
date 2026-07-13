@@ -83,8 +83,8 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     % Check that lift curve is monotonic
     [out, monoInds] = checkmonotonic(cl);
     if out == 0
-        disp('lift coefficient data is not monotonically increasing.')
-        % return;
+        disp('Lift coefficient data is not monotonically increasing.')
+        disp('  Data will be truncated to its longest monotonic section.')
     end
 
     % Truncate forcefile to include only monotonic lift section
