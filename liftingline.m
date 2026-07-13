@@ -79,12 +79,19 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     y = y/L;
     c = c/L;
 
+    %%%%%%%%%%%%%%%%%%
     % Check that lift curve is monotonic
-    out = checkmonotonic(cl);
+    [out, monoInds] = checkmonotonic(cl);
     if out == 0
-        disp('lift coefficient data is not monotonically increasing.')
-        return;
+        disp('Lift coefficient data is not monotonically increasing.')
+        disp('  Data will be truncated to its longest monotonic section.')
     end
+
+    % Truncate forcefile to include only monotonic lift section
+    alfaref = alfaref(monoInds);
+    cl = cl(monoInds);
+    cd = cd(monoInds);
+    %%%%%%%%%%%%%%%%%%%%%%
 
     % Intialize solution variables
     temp = zeros(length(y),length(AoA));
@@ -96,31 +103,34 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
 
     % Solve
     for ii = 1:length(AoA)
+        
+        %%%%%%%%%%%%%%%%%
+        % [CL(ii),CD(ii),Gamma(:,ii),v(:,ii)] = ...
+        %     LLsingle(y,c,th,alfaref,cl,AoA(ii),relfactor);
         [CL(ii),CD(ii),Gamma(:,ii),v(:,ii)] = ...
-            LLsingle(y,c,th,alfaref,cl,AoA(ii),relfactor);
-            % if any(alfai(2:end-1) < alfaref(1)) || ...
-            %     any(alfai(2:end-1) > alfaref(end))
-            %     CL(ii) = NaN;
-            %     CD(ii) = NaN;
-            % end
+            LLsingle(y,c,th,alfaref,cl,cd,AoA(ii),relfactor);
+        %%%%%%%%%%%%%%%%%
+
+        
     end
 
 end
 
 %%%%%%%%%%
-function [CL,CD,Gamma,v] = LLsingle(y,c,th,alfaref,cl,AoA,relfactor)
+function [CL,CD,Gamma,v] = LLsingle(y,c,th,alfaref,cl,cd,AoA,relfactor)
     
     % Iterate to solve for circulation distribution
     [Gamma,v,alfai,~] = calcgamma(y,c,th,AoA,alfaref,cl,...
         'relfactor',relfactor);
 
     % Calculate lift and drag
-    %%%%%%%%%%
-    % cli = interp1(alfaref,cl,alfai);
     cli = interp1(alfaref,cl,alfai,'linear','extrap');
-    %%%%%%%%%%
-    cdi = zeros(size(cli)); % high-Re assumption; flow attached, no skin friction
     
+    %%%%%%%%%%%%%%%%
+    % cdi = zeros(size(cli)); % high-Re assumption; flow attached, no skin friction
+    cdi = interp1(alfaref,cd,alfai,'linear','extrap');
+    %%%%%%%%%%%%%%%%
+
     % Ensure force coefficients go to zero at ends
     cli(1) = 0; cdi(1) = 0; cli(end) = 0; cdi(end) = 0;
     
@@ -260,16 +270,52 @@ function [Gammai,vi,alfai,varargout] = calcgamma(yi,ci,thi,AoA,alfa,cl,varargin)
 
 end
 
-function out = checkmonotonic(x)
+% function out = checkmonotonic(x)
+% 
+%     temp = sum(diff(x)<=0);
+% 
+%     if temp ~= 0
+%         disp('ERROR:');
+%         out = 0;
+%     else
+%         out = 1;
+%     end
+% 
+% end
 
-    temp = sum(diff(x)<=0);
-    
-    if temp ~= 0
-        disp('ERROR:');
-        out = 0;
+%%%%%%%%%%%%%%%%%
+function [flag, indices] = checkmonotonic(x)
+%CHECKMONOTONIC Check whether a vector is strictly monotonically increasing.
+%
+%   [flag, indices] = checkmonotonic(x)
+%
+%   flag    = 1 if the entire vector is strictly increasing
+%             0 otherwise
+%
+%   indices = indices of the longest contiguous strictly increasing section,
+%             with the same row or column orientation as x
+
+    flag = all(diff(x) > 0);
+
+    if flag
+        indices = 1:numel(x);
     else
-        out = 1;
+        breaks = find(diff(x) <= 0);
+
+        starts = [1; breaks(:) + 1];
+        ends   = [breaks(:); numel(x)];
+
+        [~, iLongest] = max(ends - starts + 1);
+
+        indices = starts(iLongest):ends(iLongest);
     end
-    
+
+    % Match the orientation of x
+    if iscolumn(x)
+        indices = indices(:);
+    end
 end
+%%%%%%%%%%%%%%%%%
+
+
 %%%%%%%%%%%%%%%%
