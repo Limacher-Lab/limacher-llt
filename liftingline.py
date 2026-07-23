@@ -58,13 +58,13 @@ def liftingline(geomfile, forcefile, AoA=0, relfactor=0.01):
     AoA = np.atleast_1d(np.asarray(AoA, dtype=float)).ravel()
 
     # Read force data
-    data = np.loadtxt(forcefile)
+    data = np.loadtxt(forcefile, skiprows=1, delimiter=',')   # header row
     alfaref = data[:, 0]
     cl = data[:, 1]
     cd = data[:, 2]
 
     # Read blade geometry data
-    data = np.loadtxt(geomfile, skiprows=1)          # header row
+    data = np.loadtxt(geomfile, skiprows=1, delimiter=',')    # header row
     y = data[:, 0]
     c = data[:, 1]
     th = data[:, 2]
@@ -153,13 +153,13 @@ def LLsingle(y, c, th, alfaref, cl, cd, AoA, relfactor):
     cdi[-1] = 0.0
 
     # Planform area (dimensionless)
-    S = np.trapz(c, y)
+    S = np.trapezoid(c, y)
 
     # Total force coefficients (eqs. 17-18 in LLT.tex)
-    CL = (1.0 / S) * np.trapz(
+    CL = (1.0 / S) * np.trapezoid(
         c * (cli * np.cos(v) - cdi * np.sin(v)), y
     )
-    CD = (1.0 / S) * np.trapz(
+    CD = (1.0 / S) * np.trapezoid(
         c * (cli * np.sin(v) + cdi * np.cos(v)), y
     )
 
