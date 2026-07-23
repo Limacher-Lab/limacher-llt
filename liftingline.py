@@ -18,8 +18,6 @@ checkmonotonic(x)
     Check if a vector is strictly monotonically increasing.
 """
 
-import warnings
-
 import numpy as np
 
 
