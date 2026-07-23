@@ -26,10 +26,10 @@
 % total span.
 % 
 % V holds the spanwise downwash distribution (normalized by freestream 
-% velocity) in columns corresponding to each angle of attack in ALFAS, as 
+% velocity) in columns corresponding to each angle of attack in ALFAS, as
 % with GAMMA. 
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
@@ -74,6 +74,15 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     c = data(:,2); 
     th = data(:,3);
 
+    % Validate geometry input
+    N = length(y);
+    if N < 2
+        error('Geometry file must contain at least 2 spanwise stations.');
+    end
+    if any(diff(y) <= 0)
+        error('Spanwise coordinates must be strictly increasing.');
+    end
+
     % Ensure chord and span coordinates are normalized by total span
     L = y(end)-y(1); 
     y = y/L;
@@ -97,19 +106,16 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     temp = zeros(length(y),length(AoA));
     Gamma = temp; 
     v = temp;
-    % alfai = temp;
     CL = zeros(size(AoA));
     CD = zeros(size(AoA));
 
     % Solve
     for ii = 1:length(AoA)
         
-        %%%%%%%%%%%%%%%%%
-        % [CL(ii),CD(ii),Gamma(:,ii),v(:,ii)] = ...
-        %     LLsingle(y,c,th,alfaref,cl,AoA(ii),relfactor);
+        %%%%%%%%%%%%%%%%%%
         [CL(ii),CD(ii),Gamma(:,ii),v(:,ii)] = ...
             LLsingle(y,c,th,alfaref,cl,cd,AoA(ii),relfactor);
-        %%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%
 
         
     end
@@ -127,7 +133,6 @@ function [CL,CD,Gamma,v] = LLsingle(y,c,th,alfaref,cl,cd,AoA,relfactor)
     cli = interp1(alfaref,cl,alfai,'linear','extrap');
     
     %%%%%%%%%%%%%%%%
-    % cdi = zeros(size(cli)); % high-Re assumption; flow attached, no skin friction
     cdi = interp1(alfaref,cd,alfai,'linear','extrap');
     %%%%%%%%%%%%%%%%
 
@@ -215,10 +220,16 @@ function [Gammai,vi,alfai,varargout] = calcgamma(yi,ci,thi,AoA,alfa,cl,varargin)
         
         % Calculate effective angle of attack
         alfai = AoA + thi - vi;
-        %%%%%%%%%%%%%%
-        % cli =  interp1(alfa,cl,alfai);
-        cli =  interp1(alfa,cl,alfai,'linear','extrap');
-        %%%%%%%%%%%%%
+
+        % Check if effective AoA is within supplied airfoil data range
+        if any(alfai(2:end-1) > alfa(end)) || any(alfai(2:end-1) < alfa(1))
+            disp(['ERROR: Effective angle of attack out of range at iteration ', num2str(iter)]);
+            Gammai = NaN;
+            vi = NaN;
+            return;
+        end
+
+        cli = interp1(alfa,cl,alfai,'linear');
         cli(1) = 0; cli(end) = 0;
 
         % Calculate circulation from lift coefficient
@@ -243,45 +254,15 @@ function [Gammai,vi,alfai,varargout] = calcgamma(yi,ci,thi,AoA,alfa,cl,varargin)
     else
         disp(['CONVERGED WITHIN e = ',num2str(errtol)])
     end
-    %%%%%%%%%%
-        % Check if angle of attack is out of range
-        if any(alfai(2:end-1)>alfa(end)) | any(alfai(2:end-1)<alfa(1))
-            disp('ERROR: alfa out of range');
-            Gammai = NaN;
-            vi = NaN;
-            return;
-        end
-%%%%%%%%%%
 
     if nargout > 3
         varargout{1} = err;
     end
 
-    % Warning
-    % if any(alfai(2:end-1) > alfa(end)) || ...
-    %         any(alfai(2:end-1) < alfa(1))
-    % 
-    %     warning(['Converged effective angle of attack lies outside ', ...
-    %          'the supplied airfoil dataset.']);
-    % end
-
     % Convert back to degrees
     alfai = 180/pi * alfai;
 
 end
-
-% function out = checkmonotonic(x)
-% 
-%     temp = sum(diff(x)<=0);
-% 
-%     if temp ~= 0
-%         disp('ERROR:');
-%         out = 0;
-%     else
-%         out = 1;
-%     end
-% 
-% end
 
 %%%%%%%%%%%%%%%%%
 function [flag, indices] = checkmonotonic(x)
