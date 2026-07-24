@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage[round]{natbib}
 
 % Set the header fields
 \renewcommand{\coursename}{Lifting-Line Theory — Validation Report}
@@ -39,9 +40,11 @@
 
 		This report documents the validation of both the Python and MATLAB
 		implementations of Prandtl's Lifting-Line Theory (LLT) against
-		classical analytical results.  The solver is tested on an untwisted
-		elliptic planform of aspect ratio $AR = 8$ using thin-airfoil input
-		data ($c_l = 2\pi\alpha$, $c_d = 0$).
+		classical analytical results.  The theory is drawn from Anderson's
+		\textit{Fundamentals of Aerodynamics}~\citep[Chapter~5]{Anderson2011}.
+		The solver is tested on an untwisted elliptic planform of aspect
+		ratio $AR = 8$ using thin-airfoil input data
+		($c_l = 2\pi\alpha$, $c_d = 0$).
 
 		\noindent\textbf{Validated at commit:} \texttt{\validationcommit}
 		on branch \texttt{integrated}.\par
@@ -57,6 +60,11 @@
 			\label{eq:liftslope}
 		\end{equation}
 		where $a_0 = 2\pi$ is the thin-airfoil sectional lift slope.
+		Equation~\eqref{eq:liftslope} is Anderson's Eq.~(5.69),
+		derived from the relation $C_L = a_0(\alpha - \alpha_i)$
+		(Anderson, Eq.~(5.67)) and the induced angle of attack for an
+		elliptic wing, $\alpha_i = C_L / (\pi AR)$
+		(Anderson, Eq.~(5.42))~\citep[pp.~467--468]{Anderson2011}.
 
 		For $AR = 8$, equation~\eqref{eq:liftslope} gives
 		$a = 5.0265$~rad$^{-1}$ ($0.08773$~deg$^{-1}$).
@@ -90,6 +98,8 @@
 			C_{D_i} = \frac{C_L^2}{\pi AR}.
 			\label{eq:induceddrag}
 		\end{equation}
+		This is Anderson's Eq.~(5.61) with the induced drag factor
+		$\delta = 0$ for an elliptic planform~\citep[pp.~464--465]{Anderson2011}.
 
 		Both solvers reproduce the theoretical drag polar to within
 		machine precision.  The maximum deviation between the computed $C_D$
@@ -133,7 +143,8 @@
 		\section*{Summary}
 
 		Both the Python and MATLAB lifting-line solvers have been validated
-		against classical theory for an elliptic wing.  The key results are:
+		against classical theory~\citep{Anderson2011} for an elliptic wing.
+		The key results are:
 
 		\begin{itemize}
 			\item Python and MATLAB implementations produce \textbf{identical}
@@ -151,4 +162,8 @@
 
 	}
 	
+	% Bibliography
+	\bibliographystyle{myplainnat}
+	\bibliography{refs}
+
 \end{document}

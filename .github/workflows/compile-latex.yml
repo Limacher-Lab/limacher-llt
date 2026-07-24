@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '**/*.tex'
+      - '**/*.bib'
       - '**/ejlnotes.cls'
       - '**/elmath.sty'
       - '**/myplainnat.bst'
@@ -13,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TEXINPUTS: './../_common//:'
+      BSTINPUTS: './../_common//:'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
