@@ -77,7 +77,8 @@ ax3.set_title('Convergence Study - Error vs Discretization')
 ax3.legend()
 ax3.grid(True, alpha=0.3, which='both')
 ax3.set_xticks(stations)
-ax3.set_xticklabels([str(s) for s in stations])
+ax3.set_xticklabels(['31', '101', '301', '601'])
+ax3.tick_params(axis='x', which='minor', labelbottom=False)
 ax3.text(0.97, 0.95, '601 stations: 0.076%', transform=ax3.transAxes,
          ha='right', fontsize=12,
          bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.8))

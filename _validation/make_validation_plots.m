@@ -91,7 +91,7 @@ plot(xlim, [0.1, 0.1], 'r--', 'LineWidth', 1.5);
 xlabel('Number of Spanwise Stations');
 ylabel('Lift Slope Error (%)');
 title('Convergence Study - Error vs Discretization');
-legend({'LLT (computed)', '0.1% threshold'}, 'Location', 'northeast');
+legend({'LLT (computed)', '0.1% threshold'}, 'Location', 'southwest');
 grid on;
 set(gca, 'XTick', stations);
 set(gca, 'XTickLabel', arrayfun(@num2str, stations, 'UniformOutput', false));
