@@ -1,6 +1,12 @@
 % [CL,CD,Y,GAMMA,V] = LIFTINGLINE(GEOMFILE,FORCEFILE) ...
 % [CL,CD,Y,GAMMA,V] = LIFTINGLINE(GEOMFILE,FORCEFILE,ALFAS) ...
+% [CL,CD,Y,GAMMA,V] = LIFTINGLINE(GEOMFILE,FORCEFILE,ALFAS,'relfactor',R)
 % 
+% Prandtl's Lifting-Line Theory (LLT) solver for a finite wing.
+% See Anderson, Fundamentals of Aerodynamics, 5th ed., Ch. 5.
+% 
+% INPUTS
+% ------
 % GEOMFILE is the geometry file for the wing, with columns for
 % spanwise position and local chord length (both normalized by total span), 
 % and local twist angles (in degrees).
@@ -14,6 +20,11 @@
 % vector. If ALFAS is not specified, a wing angle of attack of zero is
 % assumed.
 % 
+% 'relfactor' is an optional name-value pair controlling relaxation (default
+% 0.01).  Smaller values improve stability but require more iterations.
+%
+% OUTPUTS
+% -------
 % CL and CD are the calculated lift and induced drag coefficients on the 
 % full wing.  They will have the same dimensions as ALFAS.
 % 
@@ -28,6 +39,20 @@
 % V holds the spanwise downwash distribution (normalized by freestream 
 % velocity) in columns corresponding to each angle of attack in ALFAS, as 
 % with GAMMA. 
+%
+% EXAMPLE
+% -------
+% [CL, CD] = liftingline('elliptic_AR8.txt', 'thin_airfoil_data.txt', ...
+%                        -10:2:10, 'relfactor', 0.01);
+% plot(-10:2:10, CL)
+%
+% The Python equivalent is available at limacher-llt/liftingline.py.
+%
+% REFERENCES
+% ----------
+% Anderson, J. D. Jr. (2011). Fundamentals of Aerodynamics, 5th ed.
+%   McGraw-Hill.  See Ch. 5 (pp. 449-470) for lifting-line theory,
+%   Eq. (5.69) for elliptic-wing lift slope, and Eq. (5.61) for induced drag.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

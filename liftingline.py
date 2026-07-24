@@ -2,6 +2,7 @@
 liftingline.py — Prandtl Lifting-Line Theory solver
 
 Port of the MATLAB implementation (limacher-llt/liftingline.m) to Python.
+See Anderson, Fundamentals of Aerodynamics, 5th ed., Ch. 5.
 
 Functions
 ---------
@@ -16,6 +17,12 @@ calcgamma(yi, ci, thi, AoA, alfa, cl, ...)
 
 checkmonotonic(x)
     Check if a vector is strictly monotonically increasing.
+
+References
+----------
+Anderson, J. D. Jr. (2011). Fundamentals of Aerodynamics, 5th ed.
+  McGraw-Hill.  See Ch. 5 (pp. 449-470) for lifting-line theory,
+  Eq. (5.69) for elliptic-wing lift slope, and Eq. (5.61) for induced drag.
 """
 
 import numpy as np
