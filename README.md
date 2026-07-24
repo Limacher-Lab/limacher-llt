@@ -2,7 +2,7 @@
 
 Prandtl's Lifting-Line Theory (LLT) solver — implemented in both **MATLAB** and **Python**.
 
-This repository provides a numerical implementation of Prandtl's classical lifting-line theory for predicting the aerodynamic forces on finite wings. It is developed for use in ENME 570/670 Aerodynamics at the University of Calgary.
+This repository provides a numerical implementation of Prandtl's classical lifting-line theory for predicting the aerodynamic forces on finite wings. It was developed for use in **ENME 570/670 Aerodynamics** at the **University of Calgary**.
 
 ## Quick Start
 
