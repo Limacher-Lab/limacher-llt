@@ -7,7 +7,6 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
-\usepackage[round]{natbib}
 
 % Set the header fields
 \renewcommand{\coursename}{Lifting-Line Theory — Validation Report}
@@ -41,7 +40,7 @@
 		This report documents the validation of both the Python and MATLAB
 		implementations of Prandtl's Lifting-Line Theory (LLT) against
 		classical analytical results.  The theory is drawn from Anderson's
-		\textit{Fundamentals of Aerodynamics}~\citep[Chapter~5]{Anderson2011}.
+		Anderson's 	extit{Fundamentals of Aerodynamics}~\cite[Chapter~5]{Anderson2011}.
 		The solver is tested on an untwisted elliptic planform of aspect
 		ratio $AR = 8$ using thin-airfoil input data
 		($c_l = 2\pi\alpha$, $c_d = 0$).
@@ -117,7 +116,7 @@
 			\label{eq:induceddrag}
 		\end{equation}
 		This is Anderson's Eq.~(5.61) with the induced drag factor
-		$\delta = 0$ for an elliptic planform~\citep[pp.~464--465]{Anderson2011}.
+		$\delta = 0$ for an elliptic planform~\cite[pp.~464--465]{Anderson2011}.
 
 		The drag polar is shown in \Cref{fig:dragpolar}.  Both solvers
 		reproduce the theoretical parabola $C_{D_i} = C_L^2 / (\pi AR)$
@@ -174,7 +173,7 @@
 		\section*{Summary}
 
 		Both the Python and MATLAB lifting-line solvers have been validated
-		against classical theory~\citep{Anderson2011} for an elliptic wing.
+		against classical theory~\cite{Anderson2011} for an elliptic wing.
 		The key results are:
 
 		\begin{itemize}
