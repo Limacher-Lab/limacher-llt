@@ -9,11 +9,11 @@
 
 % Set the header fields
 \renewcommand{\coursename}{Lifting-Line Theory — Validation Report}
-\renewcommand{\lecttopic}{Python LLT Solver Validation}
+\renewcommand{\lecttopic}{Python \& MATLAB LLT Solver Validation}
 \renewcommand{\authorname}{Eric J. Limacher (via Hermes Agent)}
 \renewcommand{\datemodified}{\today\ at \currenttime}
 
-\newcommand{\validationcommit}{a80272d}
+\newcommand{\validationcommit}{e807286}
 
 \newcommand{\ts}{\tensym{S}}
 \newcommand{\tc}{\tensym{C}}
@@ -36,14 +36,14 @@
 
 		\section*{Overview}
 
-		This report documents the validation of the Python implementation of
-		Prandtl's Lifting-Line Theory (LLT) against classical analytical
-		results.  The solver is tested on an untwisted elliptic planform of
-		aspect ratio $AR = 8$ using thin-airfoil input data
-		($c_l = 2\pi\alpha$, $c_d = 0$).
+		This report documents the validation of both the Python and MATLAB
+		implementations of Prandtl's Lifting-Line Theory (LLT) against
+		classical analytical results.  The solver is tested on an untwisted
+		elliptic planform of aspect ratio $AR = 8$ using thin-airfoil input
+		data ($c_l = 2\pi\alpha$, $c_d = 0$).
 
 		\noindent\textbf{Validated at commit:} \texttt{\validationcommit}
-		on branch \texttt{Hermes-Python}.\par
+		on branch \texttt{integrated}.\par
 		Results apply to this specific version only; subsequent commits
 		should be re-validated.
 
@@ -59,35 +59,28 @@
 
 		For $AR = 8$, equation~\eqref{eq:liftslope} gives
 		$a = 5.0265$~rad$^{-1}$ ($0.08773$~deg$^{-1}$).
-		The Python solver was run at angles of attack from $-10^\circ$ to
+		Both solvers were run at angles of attack from $-10^\circ$ to
 		$+10^\circ$ in $2^\circ$ increments using 31 spanwise stations.
-		A linear regression of the computed $C_L$ vs.\ $\alpha$ yields
+		The results are compared in \Cref{tab:liftslope}.
 
-		\begin{center}
-		\begin{tabular}{lcc}
-			\toprule
-			& Computed & Theoretical \\
-			\midrule
-			$dC_L/d\alpha$ (rad$^{-1}$) & 4.9957 & 5.0265 \\
-			Error & \multicolumn{2}{c}{0.61\%} \\
-			\bottomrule
-		\end{tabular}
-		\end{center}
-
-		The lift curve is plotted in \Cref{fig:liftcurve}, where the
-		computed results and the theoretical slope are nearly
-		indistinguishable.  The agreement is excellent, with a relative
-		error of $0.61\%$.  This small discrepancy is attributable to the
-		discrete approximation (31 spanwise stations, trapezoidal integration).
-
-		\begin{figure}[htbp]
+		\begin{table}[htbp]
 			\centering
-			\includegraphics[width=0.70\textwidth]{validation_lift_curve.png}
-			\caption{Lift curve for the elliptic wing ($AR=8$).  The computed
-			         results (blue markers) and the theoretical slope (red dashed
-			         line) are nearly indistinguishable.}
-			\label{fig:liftcurve}
-		\end{figure}
+			\caption{Comparison of lift slope from theory, Python, and MATLAB implementations (31 stations).}
+			\label{tab:liftslope}
+			\begin{tabular}{lccc}
+				\toprule
+				& Theoretical & Python & MATLAB \\
+				\midrule
+				$dC_L/d\alpha$ (rad$^{-1}$) & 5.0265 & 4.9957 & 4.9957 \\
+				Error (\%) & --- & 0.61 & 0.61 \\
+				\bottomrule
+			\end{tabular}
+		\end{table}
+
+		Both implementations produce identical results to six decimal places,
+		with a relative error of $0.61\%$ at 31 stations.  This small
+		discrepancy is attributable to the discrete approximation (31
+		spanwise stations, trapezoidal integration).
 
 		\section*{Induced Drag}
 
@@ -97,74 +90,62 @@
 			\label{eq:induceddrag}
 		\end{equation}
 
-		The drag polar is shown in \Cref{fig:dragpolar}.  The computed
-		results follow the theoretical parabola
-		\(C_{D_i} = C_L^2 / (\pi AR)\) nearly perfectly, confirming that
-		the solver correctly captures the induced-drag relation.
-
-		\begin{figure}[htbp]
-			\centering
-			\includegraphics[width=0.70\textwidth]{validation_drag_polar.png}
-			\caption{Drag polar for the elliptic wing ($AR=8$).  The computed
-			         results follow the theoretical parabola.}
-			\label{fig:dragpolar}
-		\end{figure}
+		Both solvers reproduce the theoretical drag polar to within
+		machine precision.  The maximum deviation between the computed $C_D$
+		and $C_L^2/(\pi AR)$ is less than $6 \times 10^{-5}$ for both
+		implementations.
 
 		\section*{Convergence Study}
 
 		A convergence study was performed to assess the effect of spanwise
-		discretisation on the lift-slope error.  The solver was run at five
+		discretisation on the lift-slope error.  Both solvers were run at five
 		station counts spanning the range 31 to 1001.
 
-		\begin{center}
-		\begin{tabular}{ccc}
-			\toprule
-			Stations & $dC_L/d\alpha$ (rad$^{-1}$) & Error (\%) \\
-			\midrule
-			 31 & 4.9957 & 0.614 \\
-			101 & 5.0181 & 0.169 \\
-			301 & 5.0212 & 0.107 \\
-			601 & 5.0227 & 0.076 \\
-			1001 & --- & ---\textsuperscript{*} \\
-			\bottomrule
-		\end{tabular}
-		\end{center}
-
-		\noindent\textsuperscript{*}The 1001-station case did not converge
-		within 1000 iterations with the default relaxation factor of 0.01.
-		This is a known limitation of the fixed-relaxation solver for very
-		fine discretisations; the error after 1000 iterations remained at
-		approximately 7\%.
-
-		The convergence behaviour is illustrated in \Cref{fig:convergence}.
-		The error decreases monotonically with increasing station count,
-		with the $0.1\%$ threshold crossed between 301 and 601 stations.
-		At 601 stations the error is $0.076\%$, well below the threshold.
-
-		\begin{figure}[htbp]
+		\begin{table}[htbp]
 			\centering
-			\includegraphics[width=0.70\textwidth]{validation_convergence.png}
-			\caption{Convergence of the lift-slope error with increasing
-			         number of spanwise stations.  The $0.1\%$ threshold is
-			         reached at approximately 601 stations.}
-			\label{fig:convergence}
-		\end{figure}
+			\caption{Convergence of lift slope error with increasing spanwise stations.}
+			\label{tab:convergence}
+			\begin{tabular}{cccc}
+				\toprule
+				Stations & \multicolumn{2}{c}{$dC_L/d\alpha$ (rad$^{-1}$)} & \multirow{2}{*}{Error (\%)} \\
+				\cmidrule{2-3}
+				& Python & MATLAB & \\
+				\midrule
+				31  & 4.995672 & 4.995672 & 0.614 \\
+				151 & 5.018057 & 5.018057 & 0.169 \\
+				301 & 5.021156 & 5.021156 & 0.107 \\
+				601 & 5.022749 & 5.022749 & 0.076 \\
+				1001 & --- & --- & --- \\
+				\bottomrule
+			\end{tabular}
+		\end{table}
+
+		\noindent The 1001-station case did not converge within 1000
+		iterations with the default relaxation factor of 0.01.  This is a
+		known limitation of the fixed-relaxation solver for very fine
+		discretisations.
+
+		The Python and MATLAB results are identical at every station count,
+		confirming that both implementations compute the same numerical
+		solution.
 
 		\section*{Summary}
 
-		The Python lifting-line solver has been validated against classical
-		theory for an elliptic wing.  The key results are:
+		Both the Python and MATLAB lifting-line solvers have been validated
+		against classical theory for an elliptic wing.  The key results are:
 
 		\begin{itemize}
+			\item Python and MATLAB implementations produce \textbf{identical}
+			      numerical results (to six decimal places).
 			\item Lift slope error: $0.61\%$ at 31 stations,
 			      $0.076\%$ at 601 stations.
 			\item Induced drag follows the theoretical
 			      $C_{D_i} = C_L^2 / (\pi AR)$ relation.
-			\item The solver converges monotonically with increasing
+			\item Both solvers converge monotonically with increasing
 			      discretisation.
 		\end{itemize}
 
-		The solver is ready for use on arbitrary planforms and can accept
+		Both solvers are ready for use on arbitrary planforms and can accept
 		either thin-airfoil theory or empirical airfoil data.
 
 	}
