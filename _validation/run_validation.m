@@ -15,6 +15,11 @@
 %     run('_validation/run_validation.m')
 
 % ── Setup paths ────────────────────────────────────────────────────────────
+% Load io package if running in Octave (provides readmatrix)
+if exist('OCTAVE_VERSION', 'builtin')
+    pkg load io;
+end
+
 test_dir = fileparts(mfilename('fullpath'));  % _validation/
 repo_dir = fileparts(test_dir);                % repo root
 cd(repo_dir);

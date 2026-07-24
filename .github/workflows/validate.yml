@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Octave
-        run: sudo apt-get update && sudo apt-get install -y octave
+        run: sudo apt-get update && sudo apt-get install -y octave octave-io
 
       - name: Run MATLAB CI tests (via Octave)
         run: octave --no-gui --eval "cd('${GITHUB_WORKSPACE}'); run('_tests/test_ci.m');"

@@ -57,7 +57,7 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     [tempa,tempb] = size(AoA);
     if tempa > tempb
         AoA = transpose(AoA);
-    elseif tempa ~= 1 & tempb ~= 1
+    elseif tempa ~= 1 && tempb ~= 1
         disp('AoA cannot be a matrix.');
         return;
     end
