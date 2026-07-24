@@ -49,16 +49,8 @@ for s = 1:length(STATIONS)
     n = STATIONS(s);
 
     % Generate elliptic geometry
-    y = linspace(-0.5, 0.5, n)';
-    c_root = 4.0 / (pi * AR);
-    c = c_root * sqrt(1.0 - (2.0 * y).^2);
-    th = zeros(size(y));
-
     geom_file = fullfile(tempdir, sprintf('elliptic_%d.txt', n));
-    fid = fopen(geom_file, 'w');
-    fprintf(fid, 'y,c,th\n');
-    fprintf(fid, '%.15f,%.15f,%.15f\n', [y, c, th].');
-    fclose(fid);
+    create_elliptic_wing(geom_file, n, AR);
 
     % Run solver
     [CL, CD, ~, ~, ~] = liftingline(geom_file, force_file, ALFAS, 'relfactor', RELAXATION);
@@ -98,16 +90,8 @@ fprintf('\n  Saved: %s\n', conv_csv);
 
 fprintf('\n--- Detailed Results (%d stations) ---\n', N_DETAIL);
 
-y_full = linspace(-0.5, 0.5, N_DETAIL)';
-c_root = 4.0 / (pi * AR);
-c_full = c_root * sqrt(1.0 - (2.0 * y_full).^2);
-th_full = zeros(size(y_full));
-
 geom_file = fullfile(tempdir, 'elliptic_detail.txt');
-fid = fopen(geom_file, 'w');
-fprintf(fid, 'y,c,th\n');
-fprintf(fid, '%.15f,%.15f,%.15f\n', [y_full, c_full, th_full].');
-fclose(fid);
+create_elliptic_wing(geom_file, N_DETAIL, AR);
 
 [CL, CD, ~, ~, ~] = liftingline(geom_file, force_file, ALFAS, 'relfactor', RELAXATION);
 delete(geom_file);

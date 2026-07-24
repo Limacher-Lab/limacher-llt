@@ -19,6 +19,7 @@ repo_dir = os.path.dirname(script_dir)
 sys.path.insert(0, repo_dir)
 os.chdir(repo_dir)
 from liftingline import liftingline
+from create_elliptic_wing import create_elliptic_wing
 
 # ── Parameters ──────────────────────────────────────────────────────────
 AR = 8.0
@@ -47,16 +48,8 @@ print("-" * 52)
 
 conv_rows = []
 for n in STATIONS:
-    y = np.linspace(-0.5, 0.5, n)
-    c_root = 4.0 / (np.pi * AR)
-    c = c_root * np.sqrt(1.0 - (2.0 * y)**2)
-    th = np.zeros_like(y)
-
     geom_file = os.path.join(tempfile.gettempdir(), f'elliptic_{n}.txt')
-    np.savetxt(geom_file,
-               np.column_stack([y, c, th]),
-               fmt='%.15f', delimiter=',',
-               header='y,c,th', comments='')
+    create_elliptic_wing(geom_file, n, AR)
 
     # Suppress print output
     old_stdout = sys.stdout
@@ -107,16 +100,8 @@ print(f"\n  Saved: {conv_csv}")
 
 print(f"\n─── Detailed Results ({N_DETAIL} stations) ────────────────")
 
-y_full = np.linspace(-0.5, 0.5, N_DETAIL)
-c_root = 4.0 / (np.pi * AR)
-c_full = c_root * np.sqrt(1.0 - (2.0 * y_full)**2)
-th_full = np.zeros_like(y_full)
-
 geom_file = os.path.join(tempfile.gettempdir(), 'elliptic_detail.txt')
-np.savetxt(geom_file,
-           np.column_stack([y_full, c_full, th_full]),
-           fmt='%.15f', delimiter=',',
-           header='y,c,th', comments='')
+create_elliptic_wing(geom_file, N_DETAIL, AR)
 
 old_stdout = sys.stdout
 sys.stdout = io.StringIO()
