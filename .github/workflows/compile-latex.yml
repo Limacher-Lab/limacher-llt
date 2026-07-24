@@ -5,6 +5,7 @@ on:
     paths:
       - '**/*.tex'
       - '**/*.bib'
+      - '**/.latexmkrc'
       - '**/ejlnotes.cls'
       - '**/elmath.sty'
       - '**/myplainnat.bst'
