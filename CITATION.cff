@@ -8,6 +8,10 @@ version: 1.0.0
 date-released: 2026
 license: MIT
 repository-code: "https://github.com/Limacher-Lab/limacher-llt"
+# Zenodo DOI will be added after the first release
+# identifiers:
+#   - type: doi
+#     value: 10.5281/zenodo.XXXXXXX
 type: software
 abstract: "Prandtl's Lifting-Line Theory solver for finite wings, implemented in MATLAB and Python. Developed for ENME 570/670 Aerodynamics at the University of Calgary."
 keywords:
