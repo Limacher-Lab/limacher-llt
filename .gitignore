@@ -1,2 +1,12 @@
 __pycache__/
 # CI trigger
+
+# LaTeX build artifacts
+*.log
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.toc

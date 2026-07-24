@@ -16,8 +16,8 @@ jobs:
     permissions:
       contents: write
     env:
-      TEXINPUTS: './../_common//:'
-      BSTINPUTS: './../_common//:'
+      TEXINPUTS: './../_common:'
+      BSTINPUTS: './../_common:'
       BIBINPUTS: '.:'
     steps:
       - name: Checkout repository
