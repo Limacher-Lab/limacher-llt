@@ -1,0 +1,28 @@
+name: Validate lifting-line solver
+
+on:
+  push:
+    paths:
+      - 'liftingline.py'
+      - 'elliptic_AR8.txt'
+      - 'thin_airfoil_data.txt'
+      - '_validation/test_ci.py'
+      - '_validation/validation_report.tex'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install numpy
+
+      - name: Run validation tests
+        run: python _validation/test_ci.py

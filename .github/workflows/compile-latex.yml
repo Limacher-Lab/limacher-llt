@@ -20,7 +20,7 @@ jobs:
         with:
           root_file: |
             _algorithm/LLT.tex
-            _algorithm/validation_report.tex
+            _validation/validation_report.tex
           latexmk_use_lualatex: false
           work_in_root_file_dir: true
 
@@ -30,4 +30,4 @@ jobs:
           name: compiled-pdfs
           path: |
             _algorithm/LLT.pdf
-            _algorithm/validation_report.pdf
+            _validation/validation_report.pdf
