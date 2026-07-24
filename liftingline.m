@@ -63,13 +63,13 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     end
     
     % Read force data
-    data = readmatrix(forcefile);
+        data = dlmread(forcefile, ',', 1, 0);
     alfaref = data(:,1);
     cl = data(:,2);
     cd = data(:,3);
 
     % Read blade geometry data
-    data = readmatrix(geomfile);
+        data = dlmread(geomfile, ',', 1, 0);
     y = data(:,1);
     c = data(:,2); 
     th = data(:,3);
@@ -319,4 +319,3 @@ end
 
 
 %%%%%%%%%%%%%%%%
-

@@ -12,11 +12,6 @@
 %     run('_tests/test_ci.m')   (if not in the repo root)
 
 % ── Setup paths ────────────────────────────────────────────────────────────
-% Load io package if running in Octave (provides readmatrix)
-if exist('OCTAVE_VERSION', 'builtin')
-    pkg load io;
-end
-
 % Ensure we're in the repo root
 test_dir = fileparts(mfilename('fullpath'));  % should be _tests/
 repo_dir = fileparts(test_dir);                % repo root
