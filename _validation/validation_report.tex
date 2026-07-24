@@ -59,9 +59,10 @@
 			a = \frac{a_0}{1 + a_0 / (\pi AR)},
 			\label{eq:liftslope}
 		\end{equation}
-		where $a_0 = 2\pi$ is the thin-airfoil sectional lift slope when sections are assumed to behave according to thin-airfoil theory.
+		where $a_0 = 2\pi$ is the thin-airfoil sectional lift slope when
+		sections are assumed to behave according to thin-airfoil theory.
 		Equation~\eqref{eq:liftslope} is Anderson's Eq.~(5.69),
-		on pg. 443, and substitution of the thin-airfoil lift slope yields
+		on pg.~443, and substitution of the thin-airfoil lift slope yields
 		
 		\begin{equation}
 			a = \frac{2 \pi \, AR}{AR + 2},
@@ -91,7 +92,22 @@
 		Both implementations produce identical results to six decimal places,
 		with a relative error of $0.61\%$ at 31 stations.  This small
 		discrepancy can be attributed to the discrete approximation (31
-		spanwise stations, trapezoidal integration), as shown by the decreasing error with increasing $N$ in the convergence study described below.
+		spanwise stations, trapezoidal integration), as shown by the
+		decreasing error with increasing $N$ in the convergence study
+		described below.
+
+		The lift curve is plotted in \Cref{fig:liftcurve}, where the
+		computed results from both implementations and the theoretical
+		slope are nearly indistinguishable.
+
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=0.70\textwidth]{validation_lift_curve.png}
+			\caption{Lift curve for the elliptic wing ($AR=8$).  The computed
+			         results (blue markers) and the theoretical slope (red dashed
+			         line) are nearly indistinguishable.}
+			\label{fig:liftcurve}
+		\end{figure}
 
 		\section*{Induced Drag}
 
@@ -103,10 +119,17 @@
 		This is Anderson's Eq.~(5.61) with the induced drag factor
 		$\delta = 0$ for an elliptic planform~\citep[pp.~464--465]{Anderson2011}.
 
-		Both solvers reproduce the theoretical drag polar to within
-		machine precision.  The maximum deviation between the computed $C_D$
-		and $C_L^2/(\pi AR)$ is less than $6 \times 10^{-5}$ for both
-		implementations.
+		The drag polar is shown in \Cref{fig:dragpolar}.  Both solvers
+		reproduce the theoretical parabola $C_{D_i} = C_L^2 / (\pi AR)$
+		nearly perfectly, confirming the correct induced-drag calculation.
+
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=0.70\textwidth]{validation_drag_polar.png}
+			\caption{Drag polar for the elliptic wing ($AR=8$).  The computed
+			         results follow the theoretical parabola.}
+			\label{fig:dragpolar}
+		\end{figure}
 
 		\section*{Convergence Study}
 
@@ -132,6 +155,18 @@
 			\end{tabular}
 		\end{table}
 
+		The convergence behaviour is illustrated in
+		\Cref{fig:convergence}.
+
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=0.70\textwidth]{validation_convergence.png}
+			\caption{Convergence of the lift-slope error with increasing
+			         number of spanwise stations.  The $0.1\%$ threshold is
+			         reached at approximately 601 stations.}
+			\label{fig:convergence}
+		\end{figure}
+
 		The Python and MATLAB results are identical at every station count,
 		confirming that both implementations compute the same numerical
 		solution.
@@ -153,12 +188,13 @@
 			      discretisation.
 		\end{itemize}
 
-		Both solvers are ready for use on arbitrary planforms and can accept either thin-airfoil theory or empirical airfoil data.
+		Both solvers are ready for use on arbitrary planforms and can accept
+		either thin-airfoil theory or empirical airfoil data.
+
+		% Bibliography
+		\bibliographystyle{myplainnat}
+		\bibliography{refs}
 
 	}
 	
-	% Bibliography
-	\bibliographystyle{myplainnat}
-	\bibliography{refs}
-
 \end{document}
