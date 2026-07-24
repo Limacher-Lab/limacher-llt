@@ -85,3 +85,11 @@ Anderson, J. D. Jr. (2011). *Fundamentals of Aerodynamics*, 5th ed. McGraw-Hill.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Citation
+
+If you use this code in your work, please cite:
+
+> Limacher, E. J. (2026). *Lifting-Line Theory Educational Codebase* (Version 1.0.0). GitHub. https://github.com/Limacher-Lab/limacher-llt
+
+See [`CITATION.cff`](CITATION.cff) for the machine-readable citation metadata.
