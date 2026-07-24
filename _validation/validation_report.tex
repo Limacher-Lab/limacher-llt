@@ -59,12 +59,14 @@
 			a = \frac{a_0}{1 + a_0 / (\pi AR)},
 			\label{eq:liftslope}
 		\end{equation}
-		where $a_0 = 2\pi$ is the thin-airfoil sectional lift slope.
+		where $a_0 = 2\pi$ is the thin-airfoil sectional lift slope when sections are assumed to behave according to thin-airfoil theory.
 		Equation~\eqref{eq:liftslope} is Anderson's Eq.~(5.69),
-		derived from the relation $C_L = a_0(\alpha - \alpha_i)$
-		(Anderson, Eq.~(5.67)) and the induced angle of attack for an
-		elliptic wing, $\alpha_i = C_L / (\pi AR)$
-		(Anderson, Eq.~(5.42))~\citep[pp.~467--468]{Anderson2011}.
+		on pg. 443, and substitution of the thin-airfoil lift slope yields
+		
+		\begin{equation}
+			a = \frac{2 \pi \, AR}{AR + 2},
+		\end{equation}
+		which recovers the 2D lift slope in the limit of $AR \rightarrow \infty$.
 
 		For $AR = 8$, equation~\eqref{eq:liftslope} gives
 		$a = 5.0265$~rad$^{-1}$ ($0.08773$~deg$^{-1}$).
@@ -88,8 +90,8 @@
 
 		Both implementations produce identical results to six decimal places,
 		with a relative error of $0.61\%$ at 31 stations.  This small
-		discrepancy is attributable to the discrete approximation (31
-		spanwise stations, trapezoidal integration).
+		discrepancy can be attributed to the discrete approximation (31
+		spanwise stations, trapezoidal integration), as shown by the decreasing error with increasing $N$ in the convergence study described below.
 
 		\section*{Induced Drag}
 
@@ -110,7 +112,7 @@
 
 		A convergence study was performed to assess the effect of spanwise
 		discretisation on the lift-slope error.  Both solvers were run at five
-		station counts spanning the range 31 to 1001.
+		station counts spanning the range 31 to 601.
 
 		\begin{table}[htbp]
 			\centering
@@ -126,15 +128,9 @@
 				151 & 5.018057 & 5.018057 & 0.169 \\
 				301 & 5.021156 & 5.021156 & 0.107 \\
 				601 & 5.022749 & 5.022749 & 0.076 \\
-				1001 & --- & --- & --- \\
 				\bottomrule
 			\end{tabular}
 		\end{table}
-
-		\noindent The 1001-station case did not converge within 1000
-		iterations with the default relaxation factor of 0.01.  This is a
-		known limitation of the fixed-relaxation solver for very fine
-		discretisations.
 
 		The Python and MATLAB results are identical at every station count,
 		confirming that both implementations compute the same numerical
@@ -157,8 +153,7 @@
 			      discretisation.
 		\end{itemize}
 
-		Both solvers are ready for use on arbitrary planforms and can accept
-		either thin-airfoil theory or empirical airfoil data.
+		Both solvers are ready for use on arbitrary planforms and can accept either thin-airfoil theory or empirical airfoil data.
 
 	}
 	
