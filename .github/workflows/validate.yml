@@ -6,7 +6,7 @@ on:
       - 'liftingline.py'
       - 'elliptic_AR8.txt'
       - 'thin_airfoil_data.txt'
-      - '_validation/test_ci.py'
+      - '_tests/test_ci.py'
       - '_validation/validation_report.tex'
 
 jobs:
@@ -25,4 +25,4 @@ jobs:
         run: pip install numpy
 
       - name: Run validation tests
-        run: python _validation/test_ci.py
+        run: python _tests/test_ci.py

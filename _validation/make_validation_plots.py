@@ -4,9 +4,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-script_dir = r'C:\Users\herme\repos\limacher-llt'
-sys.path.insert(0, script_dir)
-os.chdir(script_dir)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_dir = os.path.dirname(script_dir)
+sys.path.insert(0, repo_dir)
+os.chdir(repo_dir)
 from liftingline import liftingline
 
 # Set minimum font size to 12pt

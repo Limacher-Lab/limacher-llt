@@ -5,9 +5,10 @@ Uses 5 station counts spanning the range 31–1001.
 import io, sys, os, tempfile
 import numpy as np
 
-script_dir = r'C:\Users\herme\repos\limacher-llt'
-sys.path.insert(0, script_dir)
-os.chdir(script_dir)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_dir = os.path.dirname(script_dir)
+sys.path.insert(0, repo_dir)
+os.chdir(repo_dir)
 from liftingline import liftingline
 
 AR = 8.0
@@ -17,7 +18,7 @@ STATIONS = [31, 151, 301, 601, 1001]
 
 a0 = 2 * np.pi
 theory = a0 / (1 + a0 / (np.pi * AR))
-force_file = os.path.join(script_dir, 'thin_airfoil_data.txt')
+force_file = os.path.join(repo_dir, 'thin_airfoil_data.txt')
 
 print(f"{'Stations':>10}  {'dCL/dα (rad⁻¹)':>16}  {'Error (%)':>10}  {'Avg iters':>10}")
 print("-" * 50)
