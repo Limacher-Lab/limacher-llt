@@ -35,10 +35,13 @@ c = c_root * sqrt(1.0 - (2.0 * y).^2);
 th = zeros(size(y));
 
 geom_file = fullfile(tempdir, 'ci_elliptic.txt');
-writematrix([y, c, th], geom_file, 'Delimiter', 'comma');
+fid = fopen(geom_file, 'w');
+fprintf(fid, 'y,c,th\n');
+fprintf(fid, '%.15f,%.15f,%.15f\n', [y, c, th].');
+fclose(fid);
 
-% ── Run solver (suppress print output) ────────────────────────────────────
-old_out = evalc('[CL, CD, ~, ~, ~] = liftingline(geom_file, FORCE_FILE, ALFAS, ''relfactor'', RELAXATION);');
+% ── Run solver ────────────────────────────────────────────────────────
+[CL, CD, ~, ~, ~] = liftingline(geom_file, FORCE_FILE, ALFAS, 'relfactor', RELAXATION);
 
 delete(geom_file);
 
@@ -64,7 +67,7 @@ else
 end
 
 % 3. Lift slope error
-p = polyfit(deg2rad(ALFAS), CL, 1);
+p = polyfit(ALFAS * pi / 180, CL, 1);
 slope = p(1);
 slope_err = abs(slope - theory_slope) / theory_slope * 100;
 if slope_err >= 0.2
@@ -75,7 +78,7 @@ else
 end
 
 % 4. Linearity
-CL_fit = polyval(p, deg2rad(ALFAS));
+CL_fit = polyval(p, ALFAS * pi / 180);
 residuals = CL(:) - CL_fit(:);
 ss_res = sum(residuals.^2);
 ss_tot = sum((CL(:) - mean(CL(:))).^2);

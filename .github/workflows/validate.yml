@@ -4,13 +4,15 @@ on:
   push:
     paths:
       - 'liftingline.py'
+      - 'liftingline.m'
       - 'elliptic_AR8.txt'
       - 'thin_airfoil_data.txt'
       - '_tests/test_ci.py'
+      - '_tests/test_ci.m'
       - '_validation/validation_report.tex'
 
 jobs:
-  validate:
+  validate-python:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,5 +26,17 @@ jobs:
       - name: Install dependencies
         run: pip install numpy
 
-      - name: Run validation tests
+      - name: Run Python validation tests
         run: python _tests/test_ci.py
+
+  validate-matlab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Octave
+        run: sudo apt-get update && sudo apt-get install -y octave
+
+      - name: Run MATLAB validation tests (via Octave)
+        run: octave --no-gui --eval "cd('${GITHUB_WORKSPACE}'); run('_tests/test_ci.m');"
