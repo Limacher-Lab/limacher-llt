@@ -67,18 +67,20 @@
 		\end{tabular}
 		\end{center}
 
+		The lift curve is plotted in \Cref{fig:liftcurve}, where the
+		computed results and the theoretical slope are nearly
+		indistinguishable.  The agreement is excellent, with a relative
+		error of $0.61\%$.  This small discrepancy is attributable to the
+		discrete approximation (31 spanwise stations, trapezoidal integration).
+
 		\begin{figure}[htbp]
 			\centering
-			\includegraphics[width=0.85\textwidth]{../validation_lift_curve.png}
+			\includegraphics[width=0.70\textwidth]{../validation_lift_curve.png}
 			\caption{Lift curve for the elliptic wing ($AR=8$).  The computed
 			         results (blue markers) and the theoretical slope (red dashed
 			         line) are nearly indistinguishable.}
 			\label{fig:liftcurve}
 		\end{figure}
-
-		The agreement is excellent, with a relative error of $0.61\%$.
-		This small discrepancy is attributable to the discrete approximation
-		(31 spanwise stations, trapezoidal integration).
 
 		\section*{Induced Drag}
 
@@ -88,17 +90,18 @@
 			\label{eq:induceddrag}
 		\end{equation}
 
+		The drag polar is shown in \Cref{fig:dragpolar}.  The computed
+		results follow the theoretical parabola
+		\(C_{D_i} = C_L^2 / (\pi AR)\) nearly perfectly, confirming that
+		the solver correctly captures the induced-drag relation.
+
 		\begin{figure}[htbp]
 			\centering
-			\includegraphics[width=0.85\textwidth]{../validation_drag_polar.png}
+			\includegraphics[width=0.70\textwidth]{../validation_drag_polar.png}
 			\caption{Drag polar for the elliptic wing ($AR=8$).  The computed
 			         results follow the theoretical parabola.}
 			\label{fig:dragpolar}
 		\end{figure}
-
-		The computed drag polar matches the theoretical parabola nearly
-		perfectly, confirming that the solver correctly captures the
-		induced-drag relation.
 
 		\section*{Convergence Study}
 
@@ -126,18 +129,19 @@
 		fine discretisations; the error after 1000 iterations remained at
 		approximately 7\%.
 
+		The convergence behaviour is illustrated in \Cref{fig:convergence}.
+		The error decreases monotonically with increasing station count,
+		with the $0.1\%$ threshold crossed between 301 and 601 stations.
+		At 601 stations the error is $0.076\%$, well below the threshold.
+
 		\begin{figure}[htbp]
 			\centering
-			\includegraphics[width=0.85\textwidth]{../validation_convergence.png}
+			\includegraphics[width=0.70\textwidth]{../validation_convergence.png}
 			\caption{Convergence of the lift-slope error with increasing
 			         number of spanwise stations.  The $0.1\%$ threshold is
 			         reached at approximately 601 stations.}
 			\label{fig:convergence}
 		\end{figure}
-
-		The error decreases monotonically with increasing station count,
-		with the $0.1\%$ threshold crossed between 301 and 601 stations.
-		At 601 stations the error is $0.076\%$, well below the threshold.
 
 		\section*{Summary}
 
