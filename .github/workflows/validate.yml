@@ -1,0 +1,41 @@
+name: Validate lifting-line solver
+
+on:
+  push:
+    paths:
+      - 'liftingline.py'
+      - 'liftingline.m'
+      - 'elliptic_AR8.txt'
+      - 'thin_airfoil_data.txt'
+      - '_tests/test_ci.py'
+      - '_tests/test_ci.m'
+
+jobs:
+  validate-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install numpy
+
+      - name: Run Python CI tests
+        run: python _tests/test_ci.py
+
+  validate-matlab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Octave
+        run: sudo apt-get update && sudo apt-get install -y octave
+
+      - name: Run MATLAB CI tests (via Octave)
+        run: octave --no-gui --eval "cd('${GITHUB_WORKSPACE}'); run('_tests/test_ci.m');"
