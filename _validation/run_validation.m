@@ -23,7 +23,7 @@ cd(repo_dir);
 AR = 8.0;
 ALFAS = -10:2:10;
 RELAXATION = 0.01;
-STATIONS = [31, 151, 301, 601, 1001];        % for convergence study
+STATIONS = [31, 151, 301, 601];        % for convergence study
 N_DETAIL = 301;                                % for detailed lift/drag data
 
 a0 = 2 * pi;

@@ -25,7 +25,7 @@ from create_elliptic_wing import create_elliptic_wing
 AR = 8.0
 ALFAS = np.arange(-10, 11, 2)
 RELAXATION = 0.01
-STATIONS = [31, 151, 301, 601, 1001]      # for convergence study
+STATIONS = [31, 151, 301, 601]      # for convergence study
 N_DETAIL = 301                             # for detailed lift/drag data
 
 a0 = 2 * np.pi
