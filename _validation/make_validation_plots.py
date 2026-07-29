@@ -1,7 +1,6 @@
 import sys, os, io
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -86,3 +85,5 @@ fig3.tight_layout()
 fig3.savefig(os.path.join(script_dir, 'validation_convergence.png'), dpi=150)
 
 print("Done")
+
+plt.show()

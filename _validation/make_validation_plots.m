@@ -44,7 +44,7 @@ set(0, 'DefaultTextFontSize', 12);
 % ═════════════════════════════════════════════════════════════════════════════
 %  Figure 1: Lift curve
 % ═════════════════════════════════════════════════════════════════════════════
-figure('Visible', 'off', 'Position', [100, 100, 560, 420]);
+figure('Position', [100, 100, 560, 420]);
 plot(ALFAS, CL, 'bo-', 'MarkerSize', 6, 'LineWidth', 2);
 hold on;
 plot(ALFAS, theory_CL, 'r--', 'LineWidth', 2);
@@ -65,7 +65,7 @@ close;
 % ═════════════════════════════════════════════════════════════════════════════
 %  Figure 2: Drag polar
 % ═════════════════════════════════════════════════════════════════════════════
-figure('Visible', 'off', 'Position', [100, 100, 560, 420]);
+figure('Position', [100, 100, 560, 420]);
 plot(CL, CD, 'bo-', 'MarkerSize', 6, 'LineWidth', 2);
 hold on;
 plot(theory_CL, theory_CDi, 'r--', 'LineWidth', 2);
@@ -84,7 +84,7 @@ close;
 stations = [31, 101, 301, 601];
 errors   = [0.6143, 0.1689, 0.1073, 0.0756];
 
-figure('Visible', 'off', 'Position', [100, 100, 560, 420]);
+figure('Position', [100, 100, 560, 420]);
 semilogx(stations, errors, 'go-', 'MarkerSize', 8, 'LineWidth', 2);
 hold on;
 plot(xlim, [0.1, 0.1], 'r--', 'LineWidth', 1.5);
