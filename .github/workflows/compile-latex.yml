@@ -15,10 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      TEXINPUTS: './../_common:'
-      BSTINPUTS: './../_common:'
-      BIBINPUTS: '.:'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
