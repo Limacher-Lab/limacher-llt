@@ -9,9 +9,6 @@ on:
       - 'thin_airfoil_data.txt'
       - '_tests/test_ci.py'
       - '_tests/test_ci.m'
-      - '_validation/run_validation.py'
-      - '_validation/run_validation.m'
-      - '_validation/validation_report.tex'
 
 jobs:
   validate-python:
@@ -28,17 +25,8 @@ jobs:
       - name: Install dependencies
         run: pip install numpy
 
-      - name: Run Python validation tests
+      - name: Run Python CI tests
         run: python _tests/test_ci.py
-
-      - name: Run Python validation study
-        run: python _validation/run_validation.py
-
-      - name: Upload Python CSVs
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-validation-csvs
-          path: _validation/validation_python_*.csv
 
   validate-matlab:
     runs-on: ubuntu-latest
@@ -51,12 +39,3 @@ jobs:
 
       - name: Run MATLAB CI tests (via Octave)
         run: octave --no-gui --eval "cd('${GITHUB_WORKSPACE}'); run('_tests/test_ci.m');"
-
-      - name: Run MATLAB validation study (via Octave)
-        run: octave --no-gui --eval "cd('${GITHUB_WORKSPACE}'); run('_validation/run_validation.m');"
-
-      - name: Upload MATLAB CSVs
-        uses: actions/upload-artifact@v4
-        with:
-          name: matlab-validation-csvs
-          path: _validation/validation_matlab_*.csv
