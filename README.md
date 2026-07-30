@@ -4,7 +4,51 @@ Prandtl's Lifting-Line Theory (LLT) solver — implemented in both **MATLAB** an
 
 This repository provides a numerical implementation of Prandtl's classical lifting-line theory for predicting the aerodynamic forces on finite wings. It was developed for use in **ENME 570/670 Aerodynamics** at the **University of Calgary**.
 
-## Quick Start
+## Graphical User Interface
+
+A tkinter-based GUI is provided for users who prefer not to edit or run Python scripts directly.
+
+### Dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### Launch
+
+```bash
+python llt_gui.py
+```
+
+### Usage
+
+1. **Select a wing geometry file** — a CSV with columns `y,c,th` (spanwise coordinate, chord, twist).
+   The example file `elliptic_AR8.txt` is loaded automatically if found in the repo root.
+
+2. **Select an airfoil force-data file** — a CSV with columns `Alpha,Cl,Cd` (angle of attack, lift coefficient, drag coefficient).
+   The example file `thin_airfoil_data.txt` is loaded automatically if found.
+
+3. **Set the root angle-of-attack sweep** — minimum, maximum, and increment in degrees.
+   Defaults: min -10°, max 10°, increment 1°.
+
+4. **Press *Run simulation*** — the solver runs without freezing the interface.
+   Convergence messages appear in the solver updates panel.
+
+The **Geometry preview** panel shows chord and twist distributions.
+The **Results** panel shows the lift curve (CL vs. AoA) and drag polar (CD vs. CL) on separate tabs.
+Invalid (NaN) solutions are reported but do not crash the application.
+
+### Testing
+
+```bash
+# GUI input validation tests (no display required)
+python -m pytest _tests/test_gui_inputs.py -v
+
+# Solver numerical validation tests
+python _tests/test_ci.py
+```
+
+## Quick Start (Python / MATLAB)
 
 ### MATLAB
 
