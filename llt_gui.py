@@ -225,6 +225,508 @@ class QueueWriter(io.StringIO):
 
 
 # ══════════════════════════════════════════════════════════════════════════
+#  PerformanceMetrics dataclass
+# ══════════════════════════════════════════════════════════════════════════
+
+
+class PerformanceMetrics:
+    """
+    Container for aerodynamic performance metrics derived from solver output.
+
+    Attributes are None when unavailable.
+    """
+
+    def __init__(self):
+        self.zero_lift_angle = None        # deg
+        self.stall_angle = None             # deg
+        self.lift_slope_deg = None          # 1/deg
+        self.lift_slope_rad = None          # 1/rad
+        self.max_ld = None                  # dimensionless
+        self.angle_max_ld = None            # deg
+        self.span_efficiency = None         # dimensionless
+        self.aspect_ratio = None            # dimensionless
+        self.log_messages = []              # str list
+
+    def _fmt(self, val, fmt):
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            return 'N/A'
+        return fmt.format(val)
+
+    @property
+    def zero_lift_str(self):
+        return self._fmt(self.zero_lift_angle, '{:.3f}')
+
+    @property
+    def stall_str(self):
+        return self._fmt(self.stall_angle, '{:.3f}')
+
+    @property
+    def lift_slope_deg_str(self):
+        return self._fmt(self.lift_slope_deg, '{:.5f}')
+
+    @property
+    def lift_slope_rad_str(self):
+        return self._fmt(self.lift_slope_rad, '{:.3f}')
+
+    @property
+    def max_ld_str(self):
+        return self._fmt(self.max_ld, '{:.3f}')
+
+    @property
+    def angle_max_ld_str(self):
+        return self._fmt(self.angle_max_ld, '{:.3f}')
+
+    @property
+    def span_efficiency_str(self):
+        return self._fmt(self.span_efficiency, '{:.4f}')
+
+    @property
+    def aspect_ratio_str(self):
+        return self._fmt(self.aspect_ratio, '{:.3f}')
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  Aerodynamic performance analysis functions (no tkinter dependency)
+# ══════════════════════════════════════════════════════════════════════════
+
+
+def calculate_aspect_ratio(y_raw, c_raw):
+    """
+    Calculate aspect ratio from raw (unnormalised) geometry arrays.
+
+    Parameters
+    ----------
+    y_raw : ndarray   Spanwise coordinate (any units, but must be consistent).
+    c_raw : ndarray   Chord (same units as y_raw).
+
+    Returns
+    -------
+    AR : float
+    """
+    span = y_raw[-1] - y_raw[0]
+    y_norm = y_raw / span
+    c_norm = c_raw / span
+    S_norm = np.trapezoid(c_norm, y_norm)
+    return 1.0 / S_norm
+
+
+def estimate_zero_lift_angle(CL, AoA):
+    """
+    Estimate the wing zero-lift angle from CL vs root AoA.
+
+    Parameters
+    ----------
+    CL : ndarray   Lift coefficient (may contain NaN).
+    AoA : ndarray  Root angle of attack (deg), same length.
+
+    Returns
+    -------
+    float or None   Estimated zero-lift angle (deg), or None if not bracketed.
+    """
+    valid = np.isfinite(CL) & np.isfinite(AoA)
+    if np.sum(valid) < 2:
+        return None
+
+    CLv = CL[valid]
+    AoAv = AoA[valid]
+
+    # Check if any CL is exactly zero (within tolerance)
+    tol = 1e-12
+    idx = np.where(np.abs(CLv) < tol)[0]
+    if len(idx) > 0:
+        # Choose the one nearest zero degrees
+        return AoAv[idx[np.argmin(np.abs(AoAv[idx]))]]
+
+    # Find sign changes
+    sign_changes = []
+    for i in range(len(CLv) - 1):
+        if CLv[i] == 0:
+            continue
+        if CLv[i + 1] == 0:
+            continue
+        if CLv[i] * CLv[i + 1] < 0:
+            # Linear interpolation
+            frac = -CLv[i] / (CLv[i + 1] - CLv[i])
+            x0 = AoAv[i] + frac * (AoAv[i + 1] - AoAv[i])
+            sign_changes.append(x0)
+
+    if not sign_changes:
+        return None
+
+    # If multiple crossings, choose the one nearest 0 degrees
+    sign_changes = np.array(sign_changes)
+    return sign_changes[np.argmin(np.abs(sign_changes))]
+
+
+def estimate_stall_angle(CL, AoA, alpha_zero, peak_tol=None):
+    """
+    Estimate the wing stall angle from CL vs root AoA.
+
+    Parameters
+    ----------
+    CL : ndarray        Lift coefficient.
+    AoA : ndarray       Root angle of attack (deg).
+    alpha_zero : float  Zero-lift angle (deg), or None.
+    peak_tol : float    Tolerance for peak plateau detection.
+
+    Returns
+    -------
+    float or None       Stall angle (deg), or None if not identified.
+    """
+    valid = np.isfinite(CL) & np.isfinite(AoA)
+    if np.sum(valid) < 3:
+        return None
+
+    CLv = CL[valid]
+    AoAv = AoA[valid]
+
+    # Determine the positive-lift branch to analyse
+    if alpha_zero is not None:
+        # Branch at and above alpha_zero
+        mask = AoAv >= alpha_zero
+        if np.sum(mask) < 2:
+            # Fall back to branch containing largest positive CL
+            idx_max = np.argmax(CLv)
+            mask = np.zeros(len(CLv), dtype=bool)
+            # Contiguous region around the max
+            start = max(0, idx_max - 5)
+            end = min(len(CLv), idx_max + 5)
+            mask[start:end] = True
+    else:
+        # No zero-lift info — use branch containing largest positive CL
+        if np.max(CLv) <= 0:
+            return None
+        idx_max = np.argmax(CLv)
+        mask = np.zeros(len(CLv), dtype=bool)
+        start = max(0, idx_max - 5)
+        end = min(len(CLv), idx_max + 5)
+        mask[start:end] = True
+
+    branch_CL = CLv[mask]
+    branch_AoA = AoAv[mask]
+
+    if len(branch_CL) < 2:
+        return None
+
+    # Find global maximum
+    idx_max = np.argmax(branch_CL)
+    CL_max = branch_CL[idx_max]
+
+    if peak_tol is None:
+        peak_tol = max(0.01, 0.01 * abs(CL_max))
+
+    # Define plateau: points within peak_tol of the maximum
+    plateau_mask = np.abs(branch_CL - CL_max) <= peak_tol
+    plateau_indices = np.where(plateau_mask)[0]
+
+    # Earliest AoA in the plateau
+    stall_angle = branch_AoA[plateau_indices[0]]
+    stall_idx_global = np.where(AoAv == stall_angle)[0][0]
+
+    # Check: at least one later finite point with CL below plateau
+    later = np.where(AoAv > stall_angle)[0]
+    if len(later) == 0:
+        return None  # Max at upper boundary
+
+    later_CL = CLv[later]
+    if not np.any(later_CL < (CL_max - peak_tol)):
+        return None  # No meaningful post-peak decline
+
+    return stall_angle
+
+
+def estimate_lift_slope(CL, AoA, alpha_zero, alpha_stall):
+    """
+    Estimate mean lift-curve slope.
+
+    Primary: secant between zero-lift and stall.
+    Fallback: OLS linear fit for non-stalling linear data.
+
+    Parameters
+    ----------
+    CL : ndarray           Lift coefficient.
+    AoA : ndarray          Root angle of attack (deg).
+    alpha_zero : float or None   Zero-lift angle (deg).
+    alpha_stall : float or None  Stall angle (deg).
+
+    Returns
+    -------
+    (slope_deg, slope_rad) or None
+    """
+    valid = np.isfinite(CL) & np.isfinite(AoA)
+    CLv = CL[valid]
+    AoAv = AoA[valid]
+
+    if len(CLv) < 2:
+        return None
+
+    # Primary: stall-based secant
+    if alpha_stall is not None and alpha_zero is not None and alpha_stall > alpha_zero:
+        # Find CL at stall
+        stall_idx = np.argmin(np.abs(AoAv - alpha_stall))
+        CL_stall = CLv[stall_idx]
+        slope_deg = CL_stall / (alpha_stall - alpha_zero)
+        slope_rad = slope_deg * 180.0 / np.pi
+        return (slope_deg, slope_rad)
+
+    # Fallback: OLS linear fit for non-stalling data
+    if alpha_stall is None:
+        n = len(CLv)
+        if n < 3:
+            return None
+        A = np.vstack([AoAv, np.ones(n)]).T
+        slope_deg, intercept = np.linalg.lstsq(A, CLv, rcond=None)[0]
+        CL_fit = slope_deg * AoAv + intercept
+        residuals = CLv - CL_fit
+        ss_res = np.sum(residuals**2)
+        ss_tot = np.sum((CLv - np.mean(CLv))**2)
+        if ss_tot == 0:
+            return None
+        r2 = 1.0 - ss_res / ss_tot
+        max_resid = np.max(np.abs(residuals))
+        CL_range = np.max(CLv) - np.min(CLv)
+        if CL_range > 0 and r2 >= 0.995 and max_resid <= 0.02 * CL_range:
+            slope_rad = slope_deg * 180.0 / np.pi
+            return (slope_deg, slope_rad)
+
+    return None
+
+
+def calculate_lift_to_drag(CL, CD):
+    """
+    Calculate L/D = CL/CD for each point.
+
+    Returns NaN where CD is zero, negative, or CL/CD is non-finite.
+    """
+    CL = np.asarray(CL, dtype=float)
+    CD = np.asarray(CD, dtype=float)
+    LD = np.full_like(CL, np.nan)
+    mask = np.isfinite(CL) & np.isfinite(CD) & (CD > 1e-15)
+    LD[mask] = CL[mask] / CD[mask]
+    return LD
+
+
+def find_max_ld(CL, CD, AoA, alpha_zero):
+    """
+    Find maximum L/D and its root angle of attack.
+
+    Parameters
+    ----------
+    CL, CD, AoA : ndarray
+    alpha_zero : float or None
+
+    Returns
+    -------
+    (max_ld, angle) or None
+    """
+    # Check if ALL section Cd values are effectively zero
+    # (This is checked by the caller — we handle it here via the results)
+    LD = calculate_lift_to_drag(CL, CD)
+
+    valid = np.isfinite(LD) & np.isfinite(AoA)
+
+    # Restrict to positive-lift region
+    if alpha_zero is not None:
+        pos_mask = AoA >= alpha_zero
+    else:
+        pos_mask = CL > 0
+
+    valid = valid & pos_mask & np.isfinite(CL)
+
+    if np.sum(valid) < 2:
+        return None
+
+    LDv = LD[valid]
+    AoAv = AoA[valid]
+
+    idx_max = np.argmax(LDv)
+    max_ld = LDv[idx_max]
+    angle = AoAv[idx_max]
+
+    # Check if all finite LD values are at the same angle (edge case)
+    return (float(max_ld), float(angle))
+
+
+def calculate_induced_drag(Gamma, v, y_norm, S_norm):
+    """
+    Calculate induced drag coefficient from circulation and downwash.
+
+    CDi = (2 / S_norm) * integral(Gamma * sin(v) dy_norm)
+
+    Parameters
+    ----------
+    Gamma : ndarray   Normalised circulation (1-D, single angle).
+    v : ndarray       Normalised downwash v/U (1-D, same length).
+    y_norm : ndarray  Normalised spanwise coordinates.
+    S_norm : float    Normalised planform area.
+
+    Returns
+    -------
+    float or NaN
+    """
+    if np.any(~np.isfinite(Gamma)) or np.any(~np.isfinite(v)):
+        return np.nan
+    integrand = Gamma * np.sin(v)
+    return (2.0 / S_norm) * np.trapezoid(integrand, y_norm)
+
+
+def calculate_span_efficiency(CL, CDi, AR):
+    """
+    Calculate span efficiency e = CL^2 / (pi * AR * CDi).
+
+    Returns None if inputs are not finite or meaningful.
+    """
+    if not np.isfinite(CL) or not np.isfinite(CDi) or not np.isfinite(AR):
+        return None
+    if abs(CL) < 1e-15 or CDi <= 0:
+        return None
+    return float(CL**2 / (np.pi * AR * CDi))
+
+
+def analyze_performance(CL, CD, AoA, y_raw, c_raw, y_norm, c_norm, S_norm,
+                        Gamma, v, cd_section):
+    """
+    Compute all aerodynamic performance metrics from solver output.
+
+    Parameters
+    ----------
+    CL, CD : ndarray          Wing-level coefficients (1-D, per AoA).
+    AoA : ndarray             Root angle of attack (deg).
+    y_raw, c_raw : ndarray    Raw (unnormalised) geometry arrays.
+    y_norm, c_norm : ndarray  Normalised geometry arrays.
+    S_norm : float            Normalised planform area.
+    Gamma : ndarray           Circulation (n_y x n_aoa).
+    v : ndarray               Downwash (n_y x n_aoa).
+    cd_section : ndarray      Section Cd from airfoil data file.
+
+    Returns
+    -------
+    PerformanceMetrics
+    """
+    metrics = PerformanceMetrics()
+
+    # Aspect ratio
+    span = y_raw[-1] - y_raw[0]
+    metrics.aspect_ratio = calculate_aspect_ratio(y_raw, c_raw)
+
+    # Ensure arrays
+    CL = np.asarray(CL, dtype=float)
+    CD = np.asarray(CD, dtype=float)
+    AoA = np.asarray(AoA, dtype=float)
+
+    # Valid-data mask
+    valid = np.isfinite(CL) & np.isfinite(CD) & np.isfinite(AoA)
+    if np.sum(valid) < 2:
+        metrics.log_messages.append('Insufficient valid data for performance analysis.')
+        return metrics
+
+    CLv = CL[valid]
+    CDv = CD[valid]
+    AoAv = AoA[valid]
+
+    # ── Zero-lift angle ─────────────────────────────────────────────
+    metrics.zero_lift_angle = estimate_zero_lift_angle(CL, AoA)
+    if metrics.zero_lift_angle is None:
+        metrics.log_messages.append(
+            'Zero-lift angle not bracketed by the requested angle sweep.'
+        )
+
+    # ── Stall angle ─────────────────────────────────────────────────
+    metrics.stall_angle = estimate_stall_angle(CL, AoA, metrics.zero_lift_angle)
+    if metrics.stall_angle is None:
+        metrics.log_messages.append(
+            'Stall not observed within the requested angle sweep.'
+        )
+
+    # ── Lift slope ──────────────────────────────────────────────────
+    slopes = estimate_lift_slope(CL, AoA, metrics.zero_lift_angle,
+                                 metrics.stall_angle)
+    if slopes is not None:
+        metrics.lift_slope_deg, metrics.lift_slope_rad = slopes
+        if metrics.stall_angle is None:
+            metrics.log_messages.append(
+                'Linear lift-curve slope; no stall detected.'
+            )
+    else:
+        if metrics.stall_angle is not None:
+            metrics.log_messages.append(
+                'Lift slope unavailable: insufficient data for secant calculation.'
+            )
+        else:
+            metrics.log_messages.append(
+                'Lift slope unavailable: no stall identified and data not '
+                'sufficiently linear for OLS fit.'
+            )
+
+    # ── L/D and maximum L/D ─────────────────────────────────────────
+    # Check if all section Cd values are effectively zero
+    cd_section = np.asarray(cd_section, dtype=float)
+    all_zero_profile_drag = (
+        np.all(np.isfinite(cd_section)) and np.all(np.abs(cd_section) < 1e-15)
+    )
+
+    if all_zero_profile_drag:
+        metrics.max_ld = None
+        metrics.angle_max_ld = None
+        metrics.log_messages.append(
+            'Maximum L/D is not defined meaningfully for '
+            'zero-profile-drag input data.'
+        )
+    else:
+        max_ld_result = find_max_ld(CL, CD, AoA, metrics.zero_lift_angle)
+        if max_ld_result is not None:
+            metrics.max_ld, metrics.angle_max_ld = max_ld_result
+            # Check if max occurs at sweep boundary
+            if metrics.angle_max_ld is not None:
+                tol = 0.5 * np.mean(np.diff(AoA)) if len(AoA) > 1 else 1.0
+                if abs(metrics.angle_max_ld - AoA[-1]) < tol:
+                    metrics.log_messages.append(
+                        'Maximum L/D occurs at the upper boundary of the '
+                        'requested sweep; the true optimum may lie outside '
+                        'the requested range.'
+                    )
+        else:
+            metrics.log_messages.append(
+                'Maximum L/D not identified.'
+            )
+
+    # ── Span efficiency ─────────────────────────────────────────────
+    # Find the operating point: angle at max L/D, or fallback to
+    # positive-lift pre-stall point nearest CL=0.5
+    op_angle = metrics.angle_max_ld
+    op_source = 'max L/D'
+
+    if op_angle is None:
+        # Fallback: find positive-lift point nearest CL=0.5
+        if metrics.stall_angle is not None:
+            stall_mask = AoAv <= metrics.stall_angle
+        else:
+            stall_mask = np.ones(len(AoAv), dtype=bool)
+
+        pos_mask = (CLv > 0) & stall_mask
+        if np.any(pos_mask):
+            target = 0.5
+            idx = np.argmin(np.abs(CLv[pos_mask] - target))
+            op_angle = AoAv[pos_mask][idx]
+            op_source = f'CL ≈ {CLv[pos_mask][idx]:.3f} (fallback)'
+            metrics.log_messages.append(
+                f'Span efficiency evaluated at {op_source}.'
+            )
+
+    if op_angle is not None and Gamma is not None and v is not None:
+        # Find the closest AoA index
+        aoa_idx = np.argmin(np.abs(AoA - op_angle))
+        Gamma_op = Gamma[:, aoa_idx] if Gamma.ndim == 2 else Gamma
+        v_op = v[:, aoa_idx] if v.ndim == 2 else v
+        CL_op = CL[aoa_idx]
+        CDi_op = calculate_induced_drag(Gamma_op, v_op, y_norm, S_norm)
+        metrics.span_efficiency = calculate_span_efficiency(
+            CL_op, CDi_op, metrics.aspect_ratio)
+
+    return metrics
+
+
+# ══════════════════════════════════════════════════════════════════════════
 #  GUI application (tkinter)
 # ══════════════════════════════════════════════════════════════════════════
 
@@ -246,6 +748,13 @@ class LLTGuiApp:
         self.geom_path = None
         self.airfoil_path = None
         self.last_results = None  # (CL, CD, y, Gamma, v, AoA)
+        self._geom_y_raw = None
+        self._geom_c_raw = None
+        self._geom_y_norm = None
+        self._geom_c_norm = None
+        self._geom_S_norm = None
+        self._cd_section = None
+        self._metrics = None
 
         # Thread safety
         self._msg_queue = queue.Queue()
@@ -270,7 +779,7 @@ class LLTGuiApp:
         self.FigureCanvasTkAgg = FigureCanvasTkAgg
 
         self.root.title('Limacher Lifting-Line Solver')
-        self.root.minsize(1100, 700)
+        self.root.minsize(1200, 760)
 
         # ── Overall layout: 2x2 grid ─────────────────────────────────
         self.root.grid_rowconfigure(0, weight=35)    # top row 35%
@@ -400,16 +909,49 @@ class LLTGuiApp:
             row=1, column=0, columnspan=2, pady=(4, 0))
 
     def _build_results_panel(self):
-        """Bottom-right: Final results with notebook tabs."""
+        """Bottom-right: Performance summary + results with notebook tabs."""
         from tkinter import ttk
         from matplotlib.figure import Figure
         frame = ttk.LabelFrame(self.root, text='Results', padding=4)
         frame.grid(row=1, column=1, sticky='nsew', padx=4, pady=4)
-        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_rowconfigure(1, weight=1)
         frame.grid_columnconfigure(0, weight=1)
 
+        # ── Scalar performance summary ──────────────────────────────
+        summary_frame = ttk.Frame(frame)
+        summary_frame.grid(row=0, column=0, sticky='ew', pady=(0, 4))
+        summary_frame.grid_columnconfigure(1, weight=1)
+        summary_frame.grid_columnconfigure(3, weight=1)
+
+        labels_data = [
+            ('Zero-lift angle, α_L=0 (deg):', 0, 0,
+             'zero_lift_str', 0, 1),
+            ('Stall angle, α_stall (deg):', 0, 2,
+             'stall_str', 0, 3),
+            ('Mean lift slope, CL_α (1/deg):', 1, 0,
+             'lift_slope_deg_str', 1, 1),
+            ('Mean lift slope, CL_α (1/rad):', 1, 2,
+             'lift_slope_rad_str', 1, 3),
+            ('Maximum L/D:', 2, 0,
+             'max_ld_str', 2, 1),
+            ('Angle at max L/D (deg):', 2, 2,
+             'angle_max_ld_str', 2, 3),
+            ('Span efficiency at max L/D, e:', 3, 0,
+             'span_efficiency_str', 3, 1),
+        ]
+
+        for text, r, c, attr, vr, vc in labels_data:
+            ttk.Label(summary_frame, text=text).grid(
+                row=r, column=c, sticky='w', padx=(0, 2))
+            var = self.tk.StringVar(value='N/A')
+            ttk.Label(summary_frame, textvariable=var,
+                       font=('Segoe UI', 9, 'bold')).grid(
+                row=vr, column=vc, sticky='w', padx=(0, 16))
+            setattr(self, f'_perf_{attr}', var)
+
+        # ── Notebook with plot tabs ─────────────────────────────────
         notebook = ttk.Notebook(frame)
-        notebook.grid(row=0, column=0, sticky='nsew')
+        notebook.grid(row=1, column=0, sticky='nsew')
 
         # Lift curve tab
         lift_frame = ttk.Frame(notebook)
@@ -417,7 +959,7 @@ class LLTGuiApp:
         lift_frame.grid_rowconfigure(0, weight=1)
         lift_frame.grid_columnconfigure(0, weight=1)
 
-        self._result_fig_lift = Figure(figsize=(5, 3), dpi=100, tight_layout=True)
+        self._result_fig_lift = Figure(figsize=(5, 2.8), dpi=100, tight_layout=True)
         self._result_ax_lift = self._result_fig_lift.add_subplot(111)
         self._result_canvas_lift = self.FigureCanvasTkAgg(
             self._result_fig_lift, master=lift_frame)
@@ -432,7 +974,7 @@ class LLTGuiApp:
         drag_frame.grid_rowconfigure(0, weight=1)
         drag_frame.grid_columnconfigure(0, weight=1)
 
-        self._result_fig_drag = Figure(figsize=(5, 3), dpi=100, tight_layout=True)
+        self._result_fig_drag = Figure(figsize=(5, 2.8), dpi=100, tight_layout=True)
         self._result_ax_drag = self._result_fig_drag.add_subplot(111)
         self._result_canvas_drag = self.FigureCanvasTkAgg(
             self._result_fig_drag, master=drag_frame)
@@ -440,6 +982,21 @@ class LLTGuiApp:
         self._result_ax_drag.set_xlabel('Lift coefficient, CL')
         self._result_ax_drag.set_ylabel('Drag coefficient, CD')
         self._result_ax_drag.grid(True, alpha=0.3)
+
+        # L/D tab
+        ld_frame = ttk.Frame(notebook)
+        notebook.add(ld_frame, text='L/D ratio')
+        ld_frame.grid_rowconfigure(0, weight=1)
+        ld_frame.grid_columnconfigure(0, weight=1)
+
+        self._result_fig_ld = Figure(figsize=(5, 2.8), dpi=100, tight_layout=True)
+        self._result_ax_ld = self._result_fig_ld.add_subplot(111)
+        self._result_canvas_ld = self.FigureCanvasTkAgg(
+            self._result_fig_ld, master=ld_frame)
+        self._result_canvas_ld.get_tk_widget().grid(row=0, column=0, sticky='nsew')
+        self._result_ax_ld.set_xlabel('Root angle of attack (deg)')
+        self._result_ax_ld.set_ylabel('Lift-to-drag ratio, L/D')
+        self._result_ax_ld.grid(True, alpha=0.3)
 
     # ── Default file loading ────────────────────────────────────────
 
@@ -498,6 +1055,14 @@ class LLTGuiApp:
             return
 
         self.geom_path = path
+        self._geom_y_raw = y.copy()
+        self._geom_c_raw = c.copy()
+        # Store normalised geometry for performance analysis
+        span = y[-1] - y[0]
+        self._geom_y_norm = y / span
+        self._geom_c_norm = c / span
+        self._geom_S_norm = np.trapezoid(self._geom_c_norm, self._geom_y_norm)
+
         self.update_geometry_plots(y, c, th)
         self.append_log(f'Geometry file loaded: {Path(path).name}')
 
@@ -513,6 +1078,7 @@ class LLTGuiApp:
             return
 
         self.airfoil_path = path
+        self._cd_section = cd.copy()
         self.append_log(
             f'Airfoil data loaded: {Path(path).name}  '
             f'(Alpha range: {alpha[0]:.1f}° to {alpha[-1]:.1f}°, '
@@ -622,6 +1188,19 @@ class LLTGuiApp:
         self._result_ax_drag.grid(True, alpha=0.3)
         self._result_canvas_drag.draw_idle()
 
+        self._result_ax_ld.clear()
+        self._result_ax_ld.set_xlabel('Root angle of attack (deg)')
+        self._result_ax_ld.set_ylabel('Lift-to-drag ratio, L/D')
+        self._result_ax_ld.grid(True, alpha=0.3)
+        self._result_canvas_ld.draw_idle()
+
+        # Reset performance summary
+        self._metrics = None
+        for attr in ['zero_lift_str', 'stall_str', 'lift_slope_deg_str',
+                      'lift_slope_rad_str', 'max_ld_str', 'angle_max_ld_str',
+                      'span_efficiency_str']:
+            getattr(self, f'_perf_{attr}').set('N/A')
+
         # Log start
         self.append_log(
             f'\n--- Simulation: AoA ({min_aoa}° to {max_aoa}°, '
@@ -727,22 +1306,130 @@ class LLTGuiApp:
             self._status_var.set('Completed')
             self.append_log('\nSimulation completed successfully.')
 
-        # Plot results
+        # ── Performance analysis ────────────────────────────────────
+        self._metrics = None
+        if self._geom_y_raw is not None and self._cd_section is not None:
+            try:
+                self._metrics = analyze_performance(
+                    CL, CD, AoA,
+                    self._geom_y_raw, self._geom_c_raw,
+                    self._geom_y_norm, self._geom_c_norm,
+                    self._geom_S_norm,
+                    Gamma, v, self._cd_section,
+                )
+            except Exception as exc:
+                self.append_log(f'Performance analysis error: {exc}')
+
+        # Update summary display
+        self._update_performance_summary()
+
+        # Log performance summary
+        if self._metrics is not None:
+            m = self._metrics
+            self.append_log('')
+            self.append_log('Performance summary')
+            self.append_log('-------------------')
+            zl = m.zero_lift_str
+            sa = m.stall_str
+            sd = m.lift_slope_deg_str
+            sr = m.lift_slope_rad_str
+            ml = m.max_ld_str
+            am = m.angle_max_ld_str
+            se = m.span_efficiency_str
+            self.append_log(f'Zero-lift angle: {zl} deg')
+            self.append_log(f'Stall angle: {sa} deg')
+            self.append_log(f'Mean lift slope: {sd} 1/deg = {sr} 1/rad')
+            self.append_log(f'Maximum L/D: {ml} at {am} deg')
+            self.append_log(f'Span efficiency at maximum L/D: {se}')
+            for msg in m.log_messages:
+                self.append_log(f'  Note: {msg}')
+
+        # ── Update plots ────────────────────────────────────────────
+        self._update_result_plots(CL, CD, AoA)
+
+    def _update_result_plots(self, CL, CD, AoA):
+        """Update all three result plot tabs with markers."""
+        LD = calculate_lift_to_drag(CL, CD)
+
+        # Lift curve
         self._result_ax_lift.clear()
-        self._result_ax_lift.plot(AoA, CL, 'o-', markersize=4, linewidth=1.2)
+        mask = np.isfinite(CL)
+        if np.any(mask):
+            self._result_ax_lift.plot(
+                AoA[mask], CL[mask], 'o-', markersize=4, linewidth=1.2)
+
+        # Zero-lift marker
+        if self._metrics and self._metrics.zero_lift_angle is not None:
+            zl = self._metrics.zero_lift_angle
+            self._result_ax_lift.axvline(
+                zl, color='green', linestyle='--', alpha=0.6, linewidth=1,
+                label=f'α_L=0 = {zl:.2f}°')
+
+        # Stall marker
+        if self._metrics and self._metrics.stall_angle is not None:
+            sa = self._metrics.stall_angle
+            # Find CL at stall
+            idx = np.argmin(np.abs(AoA - sa))
+            CL_stall = CL[idx]
+            self._result_ax_lift.plot(
+                sa, CL_stall, 'ro', markersize=8, alpha=0.8,
+                label=f'Stall ≈ {sa:.1f}°')
+
         self._result_ax_lift.set_xlabel('Root angle of attack (deg)')
         self._result_ax_lift.set_ylabel('Lift coefficient, CL')
         self._result_ax_lift.grid(True, alpha=0.3)
+        if self._result_ax_lift.get_legend_handles_labels()[0]:
+            self._result_ax_lift.legend(fontsize=8)
         self._result_ax_lift.autoscale()
         self._result_canvas_lift.draw_idle()
 
+        # Drag polar
         self._result_ax_drag.clear()
-        self._result_ax_drag.plot(CL, CD, 'o-', markersize=4, linewidth=1.2)
+        mask = np.isfinite(CL) & np.isfinite(CD)
+        if np.any(mask):
+            self._result_ax_drag.plot(
+                CL[mask], CD[mask], 'o-', markersize=4, linewidth=1.2)
         self._result_ax_drag.set_xlabel('Lift coefficient, CL')
         self._result_ax_drag.set_ylabel('Drag coefficient, CD')
         self._result_ax_drag.grid(True, alpha=0.3)
         self._result_ax_drag.autoscale()
         self._result_canvas_drag.draw_idle()
+
+        # L/D ratio
+        self._result_ax_ld.clear()
+        mask = np.isfinite(LD)
+        if np.any(mask):
+            self._result_ax_ld.plot(
+                AoA[mask], LD[mask], 'o-', markersize=4, linewidth=1.2)
+
+        # Max L/D marker
+        if self._metrics and self._metrics.max_ld is not None:
+            ml = self._metrics.max_ld
+            am = self._metrics.angle_max_ld
+            self._result_ax_ld.plot(
+                am, ml, 'ro', markersize=8, alpha=0.8,
+                label=f'Max L/D = {ml:.1f} at {am:.1f}°')
+            if self._result_ax_ld.get_legend_handles_labels()[0]:
+                self._result_ax_ld.legend(fontsize=8)
+
+        self._result_ax_ld.set_xlabel('Root angle of attack (deg)')
+        self._result_ax_ld.set_ylabel('Lift-to-drag ratio, L/D')
+        self._result_ax_ld.grid(True, alpha=0.3)
+        self._result_ax_ld.autoscale()
+        self._result_canvas_ld.draw_idle()
+
+    def _update_performance_summary(self):
+        """Update the scalar performance summary display."""
+        if self._metrics is None:
+            return
+        m = self._metrics
+        self._perf_zero_lift_str.set(m.zero_lift_str)
+        self._perf_stall_str.set(m.stall_str)
+        self._perf_lift_slope_deg_str.set(m.lift_slope_deg_str)
+        self._perf_lift_slope_rad_str.set(m.lift_slope_rad_str)
+        self._perf_max_ld_str.set(m.max_ld_str)
+        self._perf_angle_max_ld_str.set(m.angle_max_ld_str)
+        self._perf_span_efficiency_str.set(m.span_efficiency_str)
 
     def _handle_simulation_failure(self, exc_type, exc_msg, exc_tb):
         """Process simulation failure."""
@@ -762,6 +1449,19 @@ class LLTGuiApp:
         self._result_ax_drag.set_ylabel('Drag coefficient, CD')
         self._result_ax_drag.grid(True, alpha=0.3)
         self._result_canvas_drag.draw_idle()
+
+        self._result_ax_ld.clear()
+        self._result_ax_ld.set_xlabel('Root angle of attack (deg)')
+        self._result_ax_ld.set_ylabel('Lift-to-drag ratio, L/D')
+        self._result_ax_ld.grid(True, alpha=0.3)
+        self._result_canvas_ld.draw_idle()
+
+        # Reset performance summary
+        self._metrics = None
+        for attr in ['zero_lift_str', 'stall_str', 'lift_slope_deg_str',
+                      'lift_slope_rad_str', 'max_ld_str', 'angle_max_ld_str',
+                      'span_efficiency_str']:
+            getattr(self, f'_perf_{attr}').set('N/A')
 
     def on_close(self):
         """Clean shutdown."""
