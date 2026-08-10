@@ -104,7 +104,6 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     y = y/L;
     c = c/L;
 
-    %%%%%%%%%%%%%%%%%%
     % Check that lift curve is monotonic
     [out, monoInds] = checkmonotonic(cl);
     if out == 0
@@ -116,7 +115,6 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     alfaref = alfaref(monoInds);
     cl = cl(monoInds);
     cd = cd(monoInds);
-    %%%%%%%%%%%%%%%%%%%%%%
 
     % Intialize solution variables
     temp = zeros(length(y),length(AoA));
@@ -129,13 +127,8 @@ function [CL,CD,y,Gamma,v] = liftingline(geomfile,forcefile,varargin)
     % Solve
     for ii = 1:length(AoA)
         
-        %%%%%%%%%%%%%%%%%
-        % [CL(ii),CD(ii),Gamma(:,ii),v(:,ii)] = ...
-        %     LLsingle(y,c,th,alfaref,cl,AoA(ii),relfactor);
         [CL(ii),CD(ii),Gamma(:,ii),v(:,ii)] = ...
             LLsingle(y,c,th,alfaref,cl,cd,AoA(ii),relfactor);
-        %%%%%%%%%%%%%%%%%
-
         
     end
 
@@ -149,12 +142,8 @@ function [CL,CD,Gamma,v] = LLsingle(y,c,th,alfaref,cl,cd,AoA,relfactor)
         'relfactor',relfactor);
 
     % Calculate lift and drag
-    cli = interp1(alfaref,cl,alfai,'linear','extrap');
-    
-    %%%%%%%%%%%%%%%%
-    % cdi = zeros(size(cli)); % high-Re assumption; flow attached, no skin friction
+    cli = interp1(alfaref,cl,alfai,'linear','extrap');    
     cdi = interp1(alfaref,cd,alfai,'linear','extrap');
-    %%%%%%%%%%%%%%%%
 
     % Ensure force coefficients go to zero at ends
     cli(1) = 0; cdi(1) = 0; cli(end) = 0; cdi(end) = 0;
@@ -170,7 +159,6 @@ end
 
 
 %%%%%%%%%%%%%
-
 function [Gammai,vi,alfai,varargout] = calcgamma(yi,ci,thi,AoA,alfa,cl,varargin)
 
     % Prepare for optional output
@@ -240,10 +228,7 @@ function [Gammai,vi,alfai,varargout] = calcgamma(yi,ci,thi,AoA,alfa,cl,varargin)
         
         % Calculate effective angle of attack
         alfai = AoA + thi - vi;
-        %%%%%%%%%%%%%%
-        % cli =  interp1(alfa,cl,alfai);
         cli =  interp1(alfa,cl,alfai,'linear','extrap');
-        %%%%%%%%%%%%%
         cli(1) = 0; cli(end) = 0;
 
         % Calculate circulation from lift coefficient
@@ -268,45 +253,24 @@ function [Gammai,vi,alfai,varargout] = calcgamma(yi,ci,thi,AoA,alfa,cl,varargin)
     else
         disp(['CONVERGED WITHIN e = ',num2str(errtol)])
     end
-    %%%%%%%%%%
-        % Check if angle of attack is out of range
-        if any(alfai(2:end-1)>alfa(end)) | any(alfai(2:end-1)<alfa(1))
-            disp('ERROR: alfa out of range');
-            Gammai = NaN;
-            vi = NaN;
-            return;
-        end
-%%%%%%%%%%
+
+    % Check if angle of attack is out of range
+    if any(alfai(2:end-1)>alfa(end)) | any(alfai(2:end-1)<alfa(1))
+        disp('ERROR: alfa out of range');
+        Gammai = NaN;
+        vi = NaN;
+        return;
+    end
+
 
     if nargout > 3
         varargout{1} = err;
     end
 
-    % Warning
-    % if any(alfai(2:end-1) > alfa(end)) || ...
-    %         any(alfai(2:end-1) < alfa(1))
-    % 
-    %     warning(['Converged effective angle of attack lies outside ', ...
-    %          'the supplied airfoil dataset.']);
-    % end
-
     % Convert back to degrees
     alfai = 180/pi * alfai;
 
 end
-
-% function out = checkmonotonic(x)
-% 
-%     temp = sum(diff(x)<=0);
-% 
-%     if temp ~= 0
-%         disp('ERROR:');
-%         out = 0;
-%     else
-%         out = 1;
-%     end
-% 
-% end
 
 %%%%%%%%%%%%%%%%%
 function [flag, indices] = checkmonotonic(x)
@@ -342,5 +306,3 @@ function [flag, indices] = checkmonotonic(x)
 end
 %%%%%%%%%%%%%%%%%
 
-
-%%%%%%%%%%%%%%%%
